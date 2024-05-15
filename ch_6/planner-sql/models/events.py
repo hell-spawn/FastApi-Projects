@@ -13,7 +13,7 @@ class Event(SQLModel, table=True):
     tags: List[str] = Field(sa_column=Column(JSON))
     location: str
 
-    model_config = ConfigDict( arbitrary_types_allowed=True, json_schema_extra={
+    model_config = ConfigDict( arbitrary_types_allowed=True, json_schema_extra={  # type: ignore
         'example': {
             'title': 'FastAPI Book Launch',
             'image': 'https://fastapi.tiangolo.com/img/fastapi-logo.png',
@@ -34,7 +34,7 @@ class EventUpdate(SQLModel):
     location: str | None = None
 
 
-    model_config = ConfigDict(json_schema_extra={
+    model_config = ConfigDict(json_schema_extra={  # type: ignore
         "example": {
                 "title": "FastAPI Book Launch",
                 "image": "https://linktomyimage.com/image.png",
