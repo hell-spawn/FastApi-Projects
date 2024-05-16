@@ -45,10 +45,10 @@ def get_movies_by_id(id: int) -> Movie | dict :
     return {} 
 
 
-@movie_router.get('/search', tags=['Movies']) # Query parameters /?category=Action
-def get_movies_by_category() -> JSONResponse:
-    return JSONResponse(content='{}')
-    #return [movie for movie in movies if movie.category == category]
+@movie_router.get('/categories/', tags=['Movies']) # Query parameters /?category=Action
+def get_movies_by_category(category: CategoryEmun) -> List[Movie]:
+    return [movie for movie in movies if movie.category == category]
+
 
 
 @movie_router.post('', tags=['Movies']) 
