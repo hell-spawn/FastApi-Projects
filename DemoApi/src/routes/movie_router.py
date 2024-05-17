@@ -2,6 +2,7 @@ from typing import Any, List
 from fastapi import APIRouter, Body, Path, Query
 from fastapi.responses import JSONResponse
 
+from src.models.error_model import ErrorApiModel
 from src.models.movie_model import CategoryEmun, Movie, MovieUpdate
 
 movies: List[Movie] = [ 
@@ -31,7 +32,10 @@ movies: List[Movie] = [
 
 movie_router = APIRouter()
 
-@movie_router.get('', tags=['Movies'], response_model=List[Movie]) 
+@movie_router.get('', tags=['Movies'], responses={
+    200: {'model': List[Movie]},
+    422: {'model': ErrorApiModel},
+    }) 
 def get_movies():
     content = [movie.model_dump() for movie in movies]
     return JSONResponse(content=content) # Custom JsonResponse
