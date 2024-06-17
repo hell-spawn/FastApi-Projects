@@ -1,9 +1,12 @@
+import uuid
+from datetime import datetime
 from typing import Any, List
-from fastapi import APIRouter, Body, Path, Query
+from fastapi import APIRouter, Body, Path, Query, Request, status
 from fastapi.responses import JSONResponse
 
 from src.models.error_model import ErrorApiModel
 from src.models.movie_model import CategoryEmun, Movie, MovieUpdate
+from src.models.success_model import SuccessListApiModel, SuccessObjectApiModel
 
 movies: List[Movie] = [ 
         Movie.model_validate(
@@ -32,38 +35,106 @@ movies: List[Movie] = [
 
 movie_router = APIRouter()
 
+
 @movie_router.get('', tags=['Movies'], responses={
-    200: {'model': List[Movie]},
+    200: {'model': SuccessListApiModel[Movie]},
+    500: {'model': ErrorApiModel},
+})
+def get_movies(request: Request):
+    current_movies: list[Movie] = [movie for movie in movies]
+    response = SuccessListApiModel[Movie](
+        status="Success",
+        code=status.HTTP_200_OK,
+        message="Request completed successfully",
+        path=request.url.path,
+        timestamp=datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+        transaction_id=uuid.uuid4().hex,
+        data=current_movies
+    )
+    return response  # Custom JsonResponse
+
+
+@movie_router.get('/{id}', tags=['Movies'], responses={  # Path parameters /2
+    200: {'model': SuccessObjectApiModel[Movie]},
+    404: {'model': SuccessObjectApiModel},
     422: {'model': ErrorApiModel},
-    }) 
-def get_movies():
-    content = [movie.model_dump() for movie in movies]
-    return JSONResponse(content=content) # Custom JsonResponse
-
-
-@movie_router.get('/{id}', tags=['Movies']) # Path parameters /2
-def get_movies_by_id(id: int) -> Movie | dict :
-    for movie in movies: 
+    500: {'model': ErrorApiModel}
+})
+def get_movies_by_id(id: int, request: Request):
+    response = SuccessObjectApiModel[Movie](
+        status="Success",
+        code=status.HTTP_200_OK,
+        message="Request completed successfully",
+        path=request.url.path,
+        timestamp=datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+        transaction_id=uuid.uuid4().hex
+    )
+    for movie in movies:
         if movie.id == id:
-            return movie
-    return {} 
+            response.data = movie
+            return response
+    response.code = status.HTTP_404_NOT_FOUND
+    response.message = "Movie not found"
+    return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content=response.model_dump())
 
 
-@movie_router.get('/categories/', tags=['Movies']) # Query parameters /?category=Action
-def get_movies_by_category(category: CategoryEmun) -> List[Movie]:
-    return [movie for movie in movies if movie.category == category]
+@movie_router.get('/categories/', tags=['Movies'], responses={
+    200: {'model': SuccessListApiModel[Movie]},
+    404: {'model': SuccessListApiModel},
+    422: {'model': ErrorApiModel},
+    500: {'model': ErrorApiModel}
+})  # Query parameters /?category=Action
+def get_movies_by_category(category: CategoryEmun, request: Request):
+    response = SuccessListApiModel[Movie](
+        status="Success",
+        code=status.HTTP_404_NOT_FOUND,
+        message="Movie not found",
+        path=request.url.path,
+        timestamp=datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+        transaction_id=uuid.uuid4().hex,
+    )
+    current_movies = [movie for movie in movies if movie.category == category]
+    if current_movies:
+        response.code = status.HTTP_200_OK
+        response.message = "Request completed successfully"
+        response.data = current_movies
+        return response
+    return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content=response.model_dump())
+    
+@movie_router.post('', tags=['Movies'], responses={
+    200: {'model': SuccessObjectApiModel[Movie]},
+    422: {'model': ErrorApiModel},
+    500: {'model': ErrorApiModel}
+    }) 
+def create_movie(movie: Movie, request: Request): 
+    response = SuccessObjectApiModel[Movie](
+        status="Success",
+        code=status.HTTP_200_OK,
+        message="Request completed successfully",
+        path=request.url.path,
+        timestamp=datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+        transaction_id=uuid.uuid4().hex,
+        data=movie
+    )
+    return response;
 
 
-
-@movie_router.post('', tags=['Movies']) 
-def create_movie(movie: Movie) -> List[Movie]: 
-    movies.append(movie) 
-    print(movie.language)
-    return movies;
-
-
-@movie_router.put('/{id}', tags=["Movies"])
-def update_movie(id: int = Path(gt=0), movie: MovieUpdate = Body()) -> List[Movie]: 
+@movie_router.put('/{id}', tags=["Movies"], responses={
+    200: {'model': SuccessListApiModel[Movie]},
+    422: {'model': ErrorApiModel},
+    404: {'model': SuccessListApiModel},
+    500: {'model': ErrorApiModel}
+    }) 
+def update_movie(request: Request, id: int = Path(gt=0), movie: MovieUpdate = Body()): 
+    movie_exist = False
+    response = SuccessListApiModel[Movie](
+        status="Success",
+        code=status.HTTP_200_OK,
+        message="Request completed successfully",
+        path=request.url.path,
+        timestamp=datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+        transaction_id=uuid.uuid4().hex,
+    )
     for current_movie in movies:
         if current_movie.id == id:
             current_movie.title = movie.title
@@ -72,14 +143,43 @@ def update_movie(id: int = Path(gt=0), movie: MovieUpdate = Body()) -> List[Movi
             current_movie.rating = movie.rating 
             current_movie.category = movie.category
             current_movie.language = movie.language
-    return movies
+            movie_exist = True
+            break
+    
+    if not movie_exist:
+        response.code = status.HTTP_404_NOT_FOUND
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content=response.model_dump())
 
+    response = SuccessListApiModel[Movie](
+        status="Success",
+        code=status.HTTP_200_OK,
+        message="Request completed successfully",
+        path=request.url.path,
+        timestamp=datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+        transaction_id=uuid.uuid4().hex,
+        data=movies
+    )
+    return response
 
-@movie_router.delete("", tags=['Movies'])
-def delete_movie(id: int) -> List[Movie]:
+@movie_router.delete("", tags=['Movies'], responses={
+    200: {'model': SuccessListApiModel[Movie]},
+    422: {'model': ErrorApiModel},
+    500: {'model': ErrorApiModel}
+    }) 
+def delete_movie(request: Request, id: int):
     for movie in movies: 
         if movie.id == id:
             movies.remove(movie)
-    return movies
+
+    response = SuccessListApiModel[Movie](
+        status="Success",
+        code=status.HTTP_200_OK,
+        message="Request completed successfully",
+        path=request.url.path,
+        timestamp=datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+        transaction_id=uuid.uuid4().hex,
+        data=movies
+    )
+    return response
 
 

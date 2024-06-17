@@ -1,11 +1,10 @@
+from typing import Any, Generic, TypeVar
 from pydantic import BaseModel
 
+from src.models.generic_model import BaseGenericResponse
 
-class ErrorApiModel(BaseModel):
-    status: int
-    message: str
-    details: list
-    timestamp: str 
-    transaction_id: str
-    path: str
 
+M = TypeVar("M", bound=BaseModel | Any)
+
+class ErrorApiModel(BaseGenericResponse, Generic[M]):
+    details: M 

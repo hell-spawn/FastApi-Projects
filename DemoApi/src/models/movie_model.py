@@ -8,7 +8,6 @@ class CategoryEmun(str, Enum):
     action = "Action"
     science_fiction =  "Science Fiction"
 
-
 class MovieUpdate(BaseModel): #Model for pydantic update movie
     title: str = Field(min_length=5, max_length=15) #Field Validation
     overview: str = Field(default="This movie is about ...")
