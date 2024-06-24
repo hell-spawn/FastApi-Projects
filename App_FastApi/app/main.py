@@ -33,9 +33,7 @@ app = FastAPI(title=PROJECT_NAME, debug=DEBUG, version=VERSION, lifespan=lifespa
 app.include_router(router, prefix=API_PREFIX)
 
 
-def create_exception_handler(
-    status_code: int, initial_detail: str
-) -> Callable[[Request, SkyPulseApiError], JSONResponse]:
+def create_exception_handler( status_code: int, initial_detail: str) -> Callable[[Request, SkyPulseApiError], JSONResponse]:
     detail = {"message": initial_detail}  # Using a dictionary to hold the detail
 
     async def exception_handler(_: Request, exc: SkyPulseApiError) -> JSONResponse:

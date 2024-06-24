@@ -43,6 +43,6 @@ alembic init -t async alembic
 alembic revision --autogenerate -m "Add Tutorial model"
 
 # Apply the migration
-$ alembic upgrade head
+$ al Tembic upgrade head
 
 

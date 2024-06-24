@@ -12,9 +12,7 @@ router = APIRouter()
 
 
 @router.post("/cities/", response_model=City)
-async def create_city(
-    city: CityCreate, db: AsyncSession = Depends(get_db_session)
-) -> City:
+async def create_city( city: CityCreate, db: AsyncSession = Depends(get_db_session)) -> City:
     logger.info(f"Creating city: {city}")
     city_params = CityCreate(**city.model_dump())
     created_city = await cities.create_city(db, city_params)
